@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>重ね合わせ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+    }
+    canvas {
+      background: #fff;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+    }
+    .slider-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1em;
+    }
+    .slider-block {
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      font-size: 0.9em;
+    }
+    span {
+      margin-left: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>重ね合わせの原理シミュレーター</h2>
+  <canvas id="waveCanvas" width="800" height="200"></canvas>
+
+  <div class="slider-group">
+    <div class="slider-block">
+      <label>波源1 振幅 
+        <input type="range" id="amp1" min="10" max="50" step="10" value="20" oninput="updateValue(this)">
+        <span id="amp1_val">20</span>
+      </label>
+      <label>波長 
+        <input type="range" id="wavelength1" min="50" max="100" step="10" value="60" oninput="updateValue(this)">
+        <span id="wavelength1_val">60</span>
+      </label>
+      <label>速さ
+        <input type="range" id="speed1" min="10" max="15" step="1" value="15" oninput="updateValue(this)">
+        <span id="speed1_val">15</span>
+      </label>
+      <label>初期位相 
+        <input type="range" id="phase1" min="0" max="6.28" step="1.57" value="0" oninput="updateValue(this)">
+        <span id="phase1_val">0</span>
+      </label>
+      <label>進行方向
+        <select id="dir1">
+          <option value="right" selected>→ 右</option>
+          <option value="left">← 左</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="slider-block">
+      <label>波源2 振幅 
+        <input type="range" id="amp2" min="10" max="50" step="10" value="30" oninput="updateValue(this)">
+        <span id="amp2_val">30</span>
+      </label>
+      <label>波長 
+        <input type="range" id="wavelength2" min="50" max="100" step="10" value="50" oninput="updateValue(this)">
+        <span id="wavelength2_val">50</span>
+      </label>
+      <label>速さ 
+        <input type="range" id="speed2" min="10" max="15" step="1" value="10" oninput="updateValue(this)">
+        <span id="speed2_val">10</span>
+      </label>
+      <label>初期位相
+        <input type="range" id="phase2" min="0" max="6.28" step="1.57" value="0" oninput="updateValue(this)">
+        <span id="phase2_val">0</span>
+      </label>
+      <label>進行方向
+        <select id="dir2">
+          <option value="right">→ 右</option>
+          <option value="left" selected>← 左</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  <script src="simulator.js"></script>
+  <br>
+  <a href="index.html">ホームに戻る</a>
+</body>
+</html>
