@@ -1,102 +1,104 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>空と雲と夕焼けの色シミュレーション</title>
+  <meta charset="UTF-8">
+  <title>光散乱シミュレーション</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    .controls { margin: 20px; }
+    .color-box {
+      width: 300px;
+      height: 150px;
+      margin: 20px auto;
+      border: 2px solid #333;
+      background-color: white;
+    }
+    label { display: block; margin-top: 10px; }
+  </style>
 </head>
 <body>
-<h2>散乱と空・雲・夕焼けの色</h2>
+  <h1>光散乱シミュレーション</h1>
 
-<label>粒径 (nm): 
-  <input type="range" id="size" min="10" max="1000" value="50" step="10">
-</label>
-<span id="sizeVal">50</span> nm<br>
+  <div class="controls">
+    <label>
+      粒径（nm）: <span id="sizeValue">50</span>
+      <input type="range" id="sizeSlider" min="10" max="1000" value="50">
+    </label>
 
-<label>光路長 (相対値): 
-  <input type="range" id="path" min="1" max="10" value="1" step="1">
-</label>
-<span id="pathVal">1</span><br><br>
+    <label>
+      光の到達距離（容器の高さ）: <span id="distanceValue">100</span>
+      <input type="range" id="distanceSlider" min="10" max="500" value="100">
+    </label>
+  </div>
 
-<div>
-  <canvas id="colorBox" width="200" height="100" style="border:1px solid black;"></canvas>
-</div>
-<div>
-  <canvas id="spectrum" width="400" height="200" style="border:1px solid black;"></canvas>
-</div>
+  <div class="color-box" id="colorBox"></div>
 
-<script>
-// 可視光波長
-const wavelengths = Array.from({length:81}, (_,i)=>380+i*5); // 380–780 nm
+  <script>
+    const sizeSlider = document.getElementById("sizeSlider");
+    const distanceSlider = document.getElementById("distanceSlider");
+    const sizeValue = document.getElementById("sizeValue");
+    const distanceValue = document.getElementById("distanceValue");
+    const colorBox = document.getElementById("colorBox");
 
-const ctxBox = document.getElementById("colorBox").getContext("2d");
-const ctxSpec = document.getElementById("spectrum").getContext("2d");
+    function wavelengthToRGB(wavelength) {
+      // 可視光の波長をRGBに変換（簡易版）
+      let R = 0, G = 0, B = 0;
+      if (wavelength >= 380 && wavelength < 440) {
+        R = -(wavelength - 440) / (440 - 380);
+        B = 1;
+      } else if (wavelength < 490) {
+        G = (wavelength - 440) / (490 - 440);
+        B = 1;
+      } else if (wavelength < 510) {
+        G = 1;
+        B = -(wavelength - 510) / (510 - 490);
+      } else if (wavelength < 580) {
+        R = (wavelength - 510) / (580 - 510);
+        G = 1;
+      } else if (wavelength < 645) {
+        R = 1;
+        G = -(wavelength - 645) / (645 - 580);
+      } else if (wavelength <= 780) {
+        R = 1;
+      }
+      return [R, G, B];
+    }
 
-// 散乱強度の簡易モデル
-function scattering(lambda, size){
-  // 小さい粒径では ~1/λ^4、大きい粒径ではほぼ一定
-  const factor = 1/(1+(lambda/size)**4);
-  return factor;
-}
+    function updateColor() {
+      const size = parseFloat(sizeSlider.value);
+      const distance = parseFloat(distanceSlider.value);
+      sizeValue.textContent = size;
+      distanceValue.textContent = distance;
 
-// 光路長による減衰
-function transmission(lambda, path){
-  // 短波長ほど減衰が大きい → exp(-k/λ^4 * path)
-  const k = 5e9; 
-  return Math.exp(-k/(lambda**4) * path);
-}
+      let totalRGB = [0, 0, 0];
+      for (let wl = 380; wl <= 780; wl += 5) {
+        let intensity;
+        if (size < 200) {
+          intensity = 1 / Math.pow(wl, 4); // レイリー散乱
+        } else {
+          intensity = 1; // ミー散乱（波長依存性なし）
+        }
 
-// 波長→RGB変換
-function wavelengthToRGB(wl) {
-  let r=0,g=0,b=0;
-  if (wl>=380 && wl<440){ r=-(wl-440)/(60); g=0; b=1;}
-  else if (wl<490){ r=0; g=(wl-440)/50; b=1;}
-  else if (wl<510){ r=0; g=1; b=-(wl-510)/20;}
-  else if (wl<580){ r=(wl-510)/70; g=1; b=0;}
-  else if (wl<645){ r=1; g=-(wl-645)/65; b=0;}
-  else if (wl<=780){ r=1; g=0; b=0;}
-  return [r,g,b];
-}
+        // 距離による減衰（簡易モデル）
+        intensity *= Math.exp(-distance / 200);
 
-function update(){
-  const size = parseInt(document.getElementById("size").value);
-  const path = parseInt(document.getElementById("path").value);
-  document.getElementById("sizeVal").textContent = size;
-  document.getElementById("pathVal").textContent = path;
+        const [r, g, b] = wavelengthToRGB(wl);
+        totalRGB[0] += r * intensity;
+        totalRGB[1] += g * intensity;
+        totalRGB[2] += b * intensity;
+      }
 
-  let spectrum = [];
-  wavelengths.forEach(wl=>{
-    let I = scattering(wl, size) * transmission(wl, path);
-    spectrum.push(I);
-  });
+      // 正規化と色変換
+      const max = Math.max(...totalRGB);
+      const rgb = totalRGB.map(c => Math.min(255, Math.floor((c / max) * 255)));
+      colorBox.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    }
 
-  // 色合成
-  let rgb = [0,0,0];
-  wavelengths.forEach((wl,i)=>{
-    let [r,g,b] = wavelengthToRGB(wl);
-    rgb[0]+=r*spectrum[i];
-    rgb[1]+=g*spectrum[i];
-    rgb[2]+=b*spectrum[i];
-  });
-  const max = Math.max(...rgb);
-  rgb = rgb.map(v=>Math.min(255, (v/max)*255));
+    sizeSlider.addEventListener("input", updateColor);
+    distanceSlider.addEventListener("input", updateColor);
 
-  // 色を表示
-  ctxBox.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-  ctxBox.fillRect(0,0,200,100);
-
-  // スペクトル表示
-  ctxSpec.clearRect(0,0,400,200);
-  ctxSpec.beginPath();
-  ctxSpec.moveTo(0,200-spectrum[0]*180);
-  spectrum.forEach((val,i)=>{
-    ctxSpec.lineTo(i*(400/spectrum.length),200-val*180);
-  });
-  ctxSpec.stroke();
-}
-
-document.getElementById("size").addEventListener("input", update);
-document.getElementById("path").addEventListener("input", update);
-update();
-</script>
+    updateColor(); // 初期表示
+  </script>
 </body>
 </html>
+
