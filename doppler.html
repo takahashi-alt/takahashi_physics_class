@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>ドップラー効果シミュレーター</h1>
-  <canvas id="dopplerCanvas" width="1000" height="600"></canvas>
+  <canvas id="dopplerCanvas" width="1000" height="400"></canvas>
   <div class="control">
     <label>音源速度: <span id="speedLabel">0</span> m/s</label><br>
     <input type="range" id="speedSlider" min="-200" max="200" value="0" step="10">
@@ -77,7 +77,7 @@
       state.t += 1 / 60;
 
       // 音源の位置を更新
-      state.sourceX += state.sourceSpeed / 60;
+      state.sourceX += state.sourceSpeed*0.5/ 60;
 
       // 一定間隔ごとに波を発生
       if (state.t - state.lastWaveTime >= waveInterval) {
@@ -93,7 +93,7 @@
       ctx.strokeStyle = "blue";
       state.waves.forEach((wave) => {
         let age = state.t - wave.birthTime;
-        let r = c * age; // スケーリング
+        let r = c * age*0.5; // スケーリング
         if (r < 2000) { 
           ctx.beginPath();
           ctx.arc(wave.x, wave.y, r, 0, 2 * Math.PI);
