@@ -69,45 +69,51 @@
       if (osc2) osc2.frequency.value = f2;
     });
 
-    // 波の描画
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
+   function draw() {
+  ctx.clearRect(0, 0, width, height);
 
-      function drawWave(freq, color, dash) {
-        ctx.beginPath();
-        ctx.setLineDash(dash ? [5, 5] : []);
-        for (let x = 0; x < width; x++) {
-          const y = height/2 + 80 * Math.sin((2 * Math.PI * freq * x / width) - t);
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = color;
-        ctx.stroke();
-      }
+  const duration = 0.02; // 横軸に表示する時間 [秒]
+  const samples = width; // ピクセルごとのサンプル
+  const dt = duration / samples;
 
-      // 個別波
-      drawWave(f1/30, "blue", true);
-      drawWave(f2/30, "red", true);
+  ctx.lineWidth = 2;
 
-      // 合成波
-      ctx.beginPath();
-      ctx.setLineDash([]);
-      for (let x = 0; x < width; x++) {
-        const y = height/2 + 60 * (
-          Math.sin((2*Math.PI*(f1/30)*x/width) - t) +
-          Math.sin((2*Math.PI*(f2/30)*x/width) - t)
-        ) / 2;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = "black";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      t += speed;
-      requestAnimationFrame(draw);
+  // 個別波
+  function drawWave(freq, color, dash) {
+    ctx.beginPath();
+    ctx.setLineDash(dash ? [5, 5] : []);
+    for (let i = 0; i < samples; i++) {
+      const time = i * dt + t; // 時間軸
+      const y = height/2 + 80 * Math.sin(2 * Math.PI * freq * time);
+      if (i === 0) ctx.moveTo(i, y);
+      else ctx.lineTo(i, y);
     }
-    draw();
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  }
+
+  drawWave(f1, "blue", true);
+  drawWave(f2, "red", true);
+
+  // 合成波
+  ctx.beginPath();
+  ctx.setLineDash([]);
+  for (let i = 0; i < samples; i++) {
+    const time = i * dt + t;
+    const y = height/2 + 80 * (
+      Math.sin(2*Math.PI*f1*time) + Math.sin(2*Math.PI*f2*time)
+    ) / 2;
+    if (i === 0) ctx.moveTo(i, y);
+    else ctx.lineTo(i, y);
+  }
+  ctx.strokeStyle = "black";
+  ctx.stroke();
+
+  // 時間進行
+  t += dt * 30; // スクロール速度調整
+
+  requestAnimationFrame(draw);
+}
 
     // ==== 音の再生 ====
     let audioCtx = null;
