@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ドップラー効果シミュレーター</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    canvas {
+      background: #000;
+      display: block;
+      margin: 0 auto;
+      border: 1px solid #555;
+    }
+    .control {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ドップラー効果シミュレーター</h1>
+  <canvas id="dopplerCanvas" width="800" height="400"></canvas>
+  <div class="control">
+    <label>音源速度: <span id="speedLabel">0</span> m/s</label><br>
+    <input type="range" id="speedSlider" min="-200" max="200" value="0" step="10">
+  </div>
+
+  <script>
+    const canvas = document.getElementById("dopplerCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const c = 340; // 音速 (m/s)
+    let sourceSpeed = 0;
+    let sourceX = 200;
+    let t = 0;
+
+    // 観測者の位置
+    const observerX = 600;
+    const observerY = canvas.height / 2;
+
+    document.getElementById("speedSlider").addEventListener("input", (e) => {
+      sourceSpeed = parseFloat(e.target.value);
+      document.getElementById("speedLabel").textContent = sourceSpeed;
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 音源の位置更新
+      sourceX += sourceSpeed / 60; 
+      t += 1 / 60;
+
+      // 波を描画
+      ctx.strokeStyle = "cyan";
+      for (let i = 0; i < 20; i++) {
+        let r = (t - i * 0.1) * c;
+        if (r > 0) {
+          ctx.beginPath();
+          ctx.arc(sourceX - sourceSpeed * i * 0.1, canvas.height / 2, r * 0.5, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+      }
+
+      // 音源を描画
+      ctx.fillStyle = "yellow";
+      ctx.beginPath();
+      ctx.arc(sourceX, canvas.height / 2, 10, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // 観測者を描画
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(observerX, observerY, 10, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = "white";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("観測者", observerX - 25, observerY - 15);
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
