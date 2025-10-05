@@ -2,150 +2,91 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>うなりシミュレーター</title>
+  <title>うなりのシミュレーション</title>
   <style>
-    body { text-align: center; font-family: sans-serif; background: white; }
-    canvas { border: 1px solid black; display: block; margin: 0 auto; background: white; }
-    .controls { margin: 10px; }
-    button { margin-top: 10px; padding: 5px 15px; }
+    body {
+      background: #fff;
+      color: #000;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    canvas {
+      background: #fff;
+      display: block;
+      margin: auto;
+      border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
-  <h1>うなりシミュレーター</h1>
-  <div class="controls">
-    f1: <input type="range" id="f1" min="100" max="600" value="440">
-    <span id="f1Val">440</span> Hz
-    <br>
-    f2: <input type="range" id="f2" min="100" max="600" value="442">
-    <span id="f2Val">442</span> Hz
-    <br>
-    <button id="playBtn">▶ 再生 / 停止</button>
-  </div>
-  <canvas id="canvas" width="800" height="400"></canvas>
+  <h1>うなりのシミュレーション</h1>
+  <canvas id="canvas" width="900" height="300"></canvas>
+
   <script>
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    const f1Slider = document.getElementById("f1");
-    const f2Slider = document.getElementById("f2");
-    const f1Val = document.getElementById("f1Val");
-    const f2Val = document.getElementById("f2Val");
+    const width = canvas.width;
+    const height = canvas.height;
 
-    let f1 = 440, f2 = 442;
-    const sampleRate = 8000;
-    const duration = 0.05;  // ★ 表示する時間を長めに（波数が増える）
-    let t0 = 0; // アニメーション用時間オフセット
-
-    // Web Audio API
-    let audioCtx = null;
-    let osc1 = null, osc2 = null, gainNode = null;
-    let isPlaying = false;
+    // 波のパラメータ
+    const f1 = 5;   // 波1の波数（周期数）
+    const f2 = 6;   // 波2の波数（少し違う）
+    const speed = 0.01; // 波の進行速度
+    let t = 0;      // 時間
 
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let N = Math.floor(sampleRate * duration);
+      ctx.clearRect(0, 0, width, height);
 
-      // f1 の波（青、点線）
-      ctx.strokeStyle = "blue";
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      for (let i = 0; i < N; i++) {
-        let t = i / sampleRate + t0;
-        let y = Math.sin(2 * Math.PI * f1 * t);
-        let x = (i / N) * canvas.width;
-        let yCanvas = canvas.height/2 - y * 60;
-        if (i === 0) ctx.moveTo(x, yCanvas);
-        else ctx.lineTo(x, yCanvas);
+      ctx.lineWidth = 2;
+
+      // 波の描画関数
+      function drawWave(freq, color, dash) {
+        ctx.beginPath();
+        ctx.setLineDash(dash ? [5, 5] : []);
+        for (let x = 0; x < width; x++) {
+          const y = height/2 + 80 * Math.sin((2 * Math.PI * freq * x / width) - t);
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.strokeStyle = color;
+        ctx.stroke();
       }
-      ctx.stroke();
 
-      // f2 の波（緑、点線）
-      ctx.strokeStyle = "green";
-      ctx.setLineDash([5, 5]);
+      // 波1 (点線)
+      drawWave(f1, "blue", true);
+      // 波2 (点線)
+      drawWave(f2, "red", true);
+
+      // 合成波 (実線)
       ctx.beginPath();
-      for (let i = 0; i < N; i++) {
-        let t = i / sampleRate + t0;
-        let y = Math.sin(2 * Math.PI * f2 * t);
-        let x = (i / N) * canvas.width;
-        let yCanvas = canvas.height/2 - y * 60;
-        if (i === 0) ctx.moveTo(x, yCanvas);
-        else ctx.lineTo(x, yCanvas);
-      }
-      ctx.stroke();
-
-      // 合成波（赤、実線）
-      ctx.strokeStyle = "red";
       ctx.setLineDash([]);
-      ctx.beginPath();
-      for (let i = 0; i < N; i++) {
-        let t = i / sampleRate + t0;
-        let y = Math.sin(2 * Math.PI * f1 * t) + Math.sin(2 * Math.PI * f2 * t);
-        let x = (i / N) * canvas.width;
-        let yCanvas = canvas.height/2 - y * 30; // 振幅調整
-        if (i === 0) ctx.moveTo(x, yCanvas);
-        else ctx.lineTo(x, yCanvas);
+      for (let x = 0; x < width; x++) {
+        const y = height/2 + 80 * (Math.sin((2*Math.PI*f1*x/width) - t) + Math.sin((2*Math.PI*f2*x/width) - t)) / 2;
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
       ctx.stroke();
+
+      // 時間更新
+      t += speed;
+
+      requestAnimationFrame(draw);
     }
 
-    function animate() {
-      draw();
-      t0 += 0.0005; // ★ 波の進行を遅くする（小さいほどゆっくり）
-      requestAnimationFrame(animate);
-    }
-
-    function update() {
-      f1 = parseFloat(f1Slider.value);
-      f2 = parseFloat(f2Slider.value);
-      f1Val.textContent = f1;
-      f2Val.textContent = f2;
-
-      if (isPlaying && osc1 && osc2) {
-        osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
-        osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
-      }
-    }
-
-    f1Slider.addEventListener("input", update);
-    f2Slider.addEventListener("input", update);
-
-    // 音の再生・停止
-    document.getElementById("playBtn").addEventListener("click", () => {
-      if (!isPlaying) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        osc1 = audioCtx.createOscillator();
-        osc2 = audioCtx.createOscillator();
-        gainNode = audioCtx.createGain();
-
-        osc1.type = "sine";
-        osc2.type = "sine";
-        osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
-        osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
-
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-
-        osc1.connect(gainNode);
-        osc2.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        osc1.start();
-        osc2.start();
-
-        isPlaying = true;
-        document.getElementById("playBtn").textContent = "■ 停止";
-      } else {
-        osc1.stop();
-        osc2.stop();
-        audioCtx.close();
-        isPlaying = false;
-        document.getElementById("playBtn").textContent = "▶ 再生";
-      }
-    });
-
-    // 初期描画とアニメーション開始
-    update();
-    animate();
+    draw();
   </script>
+</body>
+</html>
+
   <br>
   <script src="tatenami.js"></script>
   <a href="index.html">ホームに戻る</a>
