@@ -20,7 +20,7 @@
       margin-top: 15px;
     }
     button {
-      margin: 5px;
+      margin-left: 10px;
       padding: 5px 15px;
     }
   </style>
@@ -31,45 +31,38 @@
   <div class="control">
     <label>音源速度: <span id="speedLabel">0</span> m/s</label><br>
     <input type="range" id="speedSlider" min="-200" max="200" value="0" step="10">
-    <br>
-    <button id="startBtn">開始</button>
     <button id="resetBtn">リセット</button>
+    <button id="pauseBtn">一時停止</button>
   </div>
 
   <script>
     const canvas = document.getElementById("dopplerCanvas");
     const ctx = canvas.getContext("2d");
 
-    const c = 340;       // 音速 (m/s)
-    const scale = 0.5;   // スケーリング係数
-    const waveInterval = 0.33; // 波を出す間隔（秒）
+    const c = 340; // 音速 (m/s)
 
-    const observerX = 800;
-    const observerY = canvas.height / 2;
-
-    // 状態をまとめる
+    // 初期状態
     function init() {
       return {
         sourceSpeed: 0,
         sourceX: 200,
         t: 0,
         waves: [],
-        lastWaveTime: 0,
-        running: false   // ← シミュレーション動作フラグ
+        lastWaveTime: 0
       };
     }
 
     let state = init();
+    let paused = false; // 停止中かどうかのフラグ
 
-    // スライダーで速度を決定（まだ反映はしない）
+    const observerX = 800;
+    const observerY = canvas.height / 2;
+    const waveInterval = 0.33; // 波を出す間隔（秒）
+
+    // スライダーで速度変更
     document.getElementById("speedSlider").addEventListener("input", (e) => {
-      document.getElementById("speedLabel").textContent = e.target.value;
-    });
-
-    // 開始ボタン
-    document.getElementById("startBtn").addEventListener("click", () => {
-      state.sourceSpeed = parseFloat(document.getElementById("speedSlider").value);
-      state.running = true; // ← この時点で動作開始
+      state.sourceSpeed = parseFloat(e.target.value);
+      document.getElementById("speedLabel").textContent = state.sourceSpeed;
     });
 
     // リセットボタン
@@ -77,17 +70,25 @@
       state = init();
       document.getElementById("speedSlider").value = 0;
       document.getElementById("speedLabel").textContent = 0;
+      paused = false;
+      document.getElementById("pauseBtn").textContent = "一時停止";
+    });
+
+    // 一時停止ボタン
+    document.getElementById("pauseBtn").addEventListener("click", () => {
+      paused = !paused;
+      document.getElementById("pauseBtn").textContent = paused ? "再開" : "一時停止";
     });
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (state.running) {
+      if (!paused) {
         // 時間更新
         state.t += 1 / 60;
 
         // 音源の位置を更新
-        state.sourceX += (state.sourceSpeed * scale) / 60;
+        state.sourceX += state.sourceSpeed * 0.5 / 60;
 
         // 一定間隔ごとに波を発生
         if (state.t - state.lastWaveTime >= waveInterval) {
@@ -104,8 +105,8 @@
       ctx.strokeStyle = "blue";
       state.waves.forEach((wave) => {
         let age = state.t - wave.birthTime;
-        let r = c * age * scale; 
-        if (r < 2000) { 
+        let r = c * age * 0.5;
+        if (r < 2000) {
           ctx.beginPath();
           ctx.arc(wave.x, wave.y, r, 0, 2 * Math.PI);
           ctx.stroke();
