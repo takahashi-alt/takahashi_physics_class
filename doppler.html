@@ -32,7 +32,7 @@
     <label>音源速度: <span id="speedLabel">0</span> m/s</label><br>
     <input type="range" id="speedSlider" min="-200" max="200" value="0" step="10">
     <button id="resetBtn">リセット</button>
-    <button id="pauseBtn">一時停止</button>
+    <button id="pauseBtn">開始</button>
   </div>
 
   <script>
@@ -41,7 +41,6 @@
 
     const c = 340; // 音速 (m/s)
 
-    // 初期状態
     function init() {
       return {
         sourceSpeed: 0,
@@ -53,7 +52,7 @@
     }
 
     let state = init();
-    let paused = false; // 停止中かどうかのフラグ
+    let paused = true; // ← 最初は停止状態
 
     const observerX = 800;
     const observerY = canvas.height / 2;
@@ -70,14 +69,14 @@
       state = init();
       document.getElementById("speedSlider").value = 0;
       document.getElementById("speedLabel").textContent = 0;
-      paused = false;
-      document.getElementById("pauseBtn").textContent = "一時停止";
+      paused = true;
+      document.getElementById("pauseBtn").textContent = "開始";
     });
 
-    // 一時停止ボタン
+    // 開始 / 一時停止ボタン
     document.getElementById("pauseBtn").addEventListener("click", () => {
       paused = !paused;
-      document.getElementById("pauseBtn").textContent = paused ? "再開" : "一時停止";
+      document.getElementById("pauseBtn").textContent = paused ? "開始" : "一時停止";
     });
 
     function draw() {
@@ -138,4 +137,3 @@
   <a href="index.html">ホームに戻る</a>
 </body>
 </html>
-
