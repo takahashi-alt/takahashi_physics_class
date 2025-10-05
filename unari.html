@@ -34,7 +34,7 @@
       <span id="f1val">440</span> Hz
     </label>
     <label>
-      f2: <input type="range" id="freq2" min="200" max="600" value="444"> 
+      f2: <input type="range" id="freq2" min="200" max="600" value="442"> 
       <span id="f2val">444</span> Hz
     </label>
     <button id="toggleSound">再生</button>
@@ -86,16 +86,16 @@
       }
 
       // 個別波
-      drawWave(f1/20, "blue", true);
-      drawWave(f2/20, "red", true);
+      drawWave(f1/30, "blue", true);
+      drawWave(f2/30, "red", true);
 
       // 合成波
       ctx.beginPath();
       ctx.setLineDash([]);
       for (let x = 0; x < width; x++) {
-        const y = height/2 + 80 * (
-          Math.sin((2*Math.PI*(f1/20)*x/width) - t) +
-          Math.sin((2*Math.PI*(f2/20)*x/width) - t)
+        const y = height/2 + 60 * (
+          Math.sin((2*Math.PI*(f1/30)*x/width) - t) +
+          Math.sin((2*Math.PI*(f2/30)*x/width) - t)
         ) / 2;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
