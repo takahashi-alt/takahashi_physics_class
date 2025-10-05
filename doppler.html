@@ -19,6 +19,10 @@
     .control {
       margin-top: 15px;
     }
+    button {
+      margin-left: 10px;
+      padding: 5px 15px;
+    }
   </style>
 </head>
 <body>
@@ -27,6 +31,7 @@
   <div class="control">
     <label>音源速度: <span id="speedLabel">0</span> m/s</label><br>
     <input type="range" id="speedSlider" min="-200" max="200" value="0" step="10">
+    <button id="resetBtn">リセット</button>
   </div>
 
   <script>
@@ -38,32 +43,55 @@
     let sourceX = 200;
     let t = 0;
 
-    // 観測者の位置
     const observerX = 600;
     const observerY = canvas.height / 2;
+
+    // 波の情報を管理する配列
+    let waves = [];
+    const waveInterval = 0.3; // 波を出す間隔（秒）
+    let lastWaveTime = 0;
 
     document.getElementById("speedSlider").addEventListener("input", (e) => {
       sourceSpeed = parseFloat(e.target.value);
       document.getElementById("speedLabel").textContent = sourceSpeed;
     });
 
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      sourceX = 200;
+      t = 0;
+      waves = [];
+    });
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 音源の位置更新
-      sourceX += sourceSpeed / 60; 
+      // 時間更新
       t += 1 / 60;
+
+      // 音源の位置を更新
+      sourceX += sourceSpeed / 60;
+
+      // 一定間隔ごとに波を発生
+      if (t - lastWaveTime >= waveInterval) {
+        waves.push({
+          x: sourceX,  // 波が発生した時の音源の位置
+          y: canvas.height / 2,
+          birthTime: t
+        });
+        lastWaveTime = t;
+      }
 
       // 波を描画
       ctx.strokeStyle = "cyan";
-      for (let i = 0; i < 20; i++) {
-        let r = (t - i * 0.1) * c;
-        if (r > 0) {
+      waves.forEach((wave) => {
+        let age = t - wave.birthTime;
+        let r = c * age * 0.5; // スケーリングして見やすく
+        if (r < 2000) { // 無限に広がらないよう制限
           ctx.beginPath();
-          ctx.arc(sourceX - sourceSpeed * i * 0.1, canvas.height / 2, r * 0.5, 0, 2 * Math.PI);
+          ctx.arc(wave.x, wave.y, r, 0, 2 * Math.PI);
           ctx.stroke();
         }
-      }
+      });
 
       // 音源を描画
       ctx.fillStyle = "yellow";
