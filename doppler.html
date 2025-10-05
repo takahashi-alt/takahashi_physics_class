@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>ドップラー効果シミュレーター</h1>
-  <canvas id="dopplerCanvas" width="800" height="400"></canvas>
+  <canvas id="dopplerCanvas" width="1000" height="600"></canvas>
   <div class="control">
     <label>音源速度: <span id="speedLabel">0</span> m/s</label><br>
     <input type="range" id="speedSlider" min="-200" max="200" value="0" step="10">
@@ -55,7 +55,7 @@
 
     const observerX = 600;
     const observerY = canvas.height / 2;
-    const waveInterval = 0.3; // 波を出す間隔（秒）
+    const waveInterval = 0.2; // 波を出す間隔（秒）
 
     // スライダーで速度変更
     document.getElementById("speedSlider").addEventListener("input", (e) => {
@@ -93,7 +93,7 @@
       ctx.strokeStyle = "blue";
       state.waves.forEach((wave) => {
         let age = state.t - wave.birthTime;
-        let r = c * age * 0.5; // スケーリング
+        let r = c * age; // スケーリング
         if (r < 2000) { 
           ctx.beginPath();
           ctx.arc(wave.x, wave.y, r, 0, 2 * Math.PI);
@@ -122,5 +122,7 @@
 
     draw();
   </script>
+  <br>
+  <a href="index.html">ホームに戻る</a>
 </body>
 </html>
