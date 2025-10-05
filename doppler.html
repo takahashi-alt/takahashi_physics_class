@@ -5,13 +5,13 @@
   <title>ドップラー効果シミュレーター</title>
   <style>
     body {
-      background: #111;
-      color: white;
+      background: #fff;
+      color: #000;
       text-align: center;
       font-family: sans-serif;
     }
     canvas {
-      background: #000;
+      background: #fff;
       display: block;
       margin: 0 auto;
       border: 1px solid #555;
@@ -39,54 +39,62 @@
     const ctx = canvas.getContext("2d");
 
     const c = 340; // 音速 (m/s)
-    let sourceSpeed = 0;
-    let sourceX = 200;
-    let t = 0;
+
+    // 初期値をまとめて関数に
+    function init() {
+      return {
+        sourceSpeed: 0,
+        sourceX: 200,
+        t: 0,
+        waves: [],
+        lastWaveTime: 0
+      };
+    }
+
+    let state = init();
 
     const observerX = 600;
     const observerY = canvas.height / 2;
-
-    // 波の情報を管理する配列
-    let waves = [];
     const waveInterval = 0.3; // 波を出す間隔（秒）
-    let lastWaveTime = 0;
 
+    // スライダーで速度変更
     document.getElementById("speedSlider").addEventListener("input", (e) => {
-      sourceSpeed = parseFloat(e.target.value);
-      document.getElementById("speedLabel").textContent = sourceSpeed;
+      state.sourceSpeed = parseFloat(e.target.value);
+      document.getElementById("speedLabel").textContent = state.sourceSpeed;
     });
 
+    // リセットボタン
     document.getElementById("resetBtn").addEventListener("click", () => {
-      sourceX = 200;
-      t = 0;
-      waves = [];
+      state = init();  // 全部初期化
+      document.getElementById("speedSlider").value = 0;
+      document.getElementById("speedLabel").textContent = 0;
     });
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // 時間更新
-      t += 1 / 60;
+      state.t += 1 / 60;
 
       // 音源の位置を更新
-      sourceX += sourceSpeed / 60;
+      state.sourceX += state.sourceSpeed / 60;
 
       // 一定間隔ごとに波を発生
-      if (t - lastWaveTime >= waveInterval) {
-        waves.push({
-          x: sourceX,  // 波が発生した時の音源の位置
+      if (state.t - state.lastWaveTime >= waveInterval) {
+        state.waves.push({
+          x: state.sourceX,  
           y: canvas.height / 2,
-          birthTime: t
+          birthTime: state.t
         });
-        lastWaveTime = t;
+        state.lastWaveTime = state.t;
       }
 
       // 波を描画
-      ctx.strokeStyle = "cyan";
-      waves.forEach((wave) => {
-        let age = t - wave.birthTime;
-        let r = c * age * 0.5; // スケーリングして見やすく
-        if (r < 2000) { // 無限に広がらないよう制限
+      ctx.strokeStyle = "blue";
+      state.waves.forEach((wave) => {
+        let age = state.t - wave.birthTime;
+        let r = c * age * 0.5; // スケーリング
+        if (r < 2000) { 
           ctx.beginPath();
           ctx.arc(wave.x, wave.y, r, 0, 2 * Math.PI);
           ctx.stroke();
@@ -94,18 +102,18 @@
       });
 
       // 音源を描画
-      ctx.fillStyle = "yellow";
+      ctx.fillStyle = "red";
       ctx.beginPath();
-      ctx.arc(sourceX, canvas.height / 2, 10, 0, 2 * Math.PI);
+      ctx.arc(state.sourceX, canvas.height / 2, 10, 0, 2 * Math.PI);
       ctx.fill();
 
       // 観測者を描画
-      ctx.fillStyle = "white";
+      ctx.fillStyle = "black";
       ctx.beginPath();
       ctx.arc(observerX, observerY, 10, 0, 2 * Math.PI);
       ctx.fill();
 
-      ctx.fillStyle = "white";
+      ctx.fillStyle = "black";
       ctx.font = "14px sans-serif";
       ctx.fillText("観測者", observerX - 25, observerY - 15);
 
@@ -114,7 +122,5 @@
 
     draw();
   </script>
-  <br>
-  <a href="index.html">ホームに戻る</a>
 </body>
 </html>
