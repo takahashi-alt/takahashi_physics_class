@@ -18,7 +18,7 @@ speedSlider.addEventListener("input", () => {
   speedValue.textContent = waveSpeed.toFixed(1);
 });
 
-// 粒子の初期位置
+// 粒子の初期位置を設定
 for (let i = 0; i < numParticles; i++) {
   positions[i] = i * spacing;
 }
@@ -31,7 +31,7 @@ function animate() {
 
   const centerY = longCanvas.height / 2;
 
-  // 粒子の動きを描画
+  // 疎密波の表示（粒子の横方向振動）
   for (let i = 0; i < numParticles; i++) {
     const phase = (i / numParticles) * 2 * Math.PI;
     const dx = amplitude * Math.sin(2 * Math.PI * freq * time - phase * waveSpeed);
@@ -45,6 +45,3 @@ function animate() {
 }
 
 animate();
-
-
-
