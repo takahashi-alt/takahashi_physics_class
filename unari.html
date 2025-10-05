@@ -94,8 +94,8 @@
       ctx.setLineDash([]);
       for (let x = 0; x < width; x++) {
         const y = height/2 + 80 * (
-          Math.sin((2*Math.PI*(f1/80)*x/width) - t) +
-          Math.sin((2*Math.PI*(f2/80)*x/width) - t)
+          Math.sin((2*Math.PI*(f1/20)*x/width) - t) +
+          Math.sin((2*Math.PI*(f2/20)*x/width) - t)
         ) / 2;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
