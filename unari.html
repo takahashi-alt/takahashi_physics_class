@@ -33,7 +33,7 @@
 
     let f1 = 440, f2 = 442;
     const sampleRate = 8000;
-    const duration = 0.01;
+    const duration = 0.05;  // ★ 表示する時間を長めに（波数が増える）
     let t0 = 0; // アニメーション用時間オフセット
 
     // Web Audio API
@@ -90,7 +90,7 @@
 
     function animate() {
       draw();
-      t0 += 0.002; // 時間の進み方（数値を変えると速さが変わる）
+      t0 += 0.0005; // ★ 波の進行を遅くする（小さいほどゆっくり）
       requestAnimationFrame(animate);
     }
 
@@ -146,6 +146,9 @@
     update();
     animate();
   </script>
+  <br>
+  <script src="tatenami.js"></script>
+  <a href="index.html">ホームに戻る</a>
 </body>
 </html>
 
