@@ -1,264 +1,95 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>うなり（ビート）シミュレーター</title>
+  <meta charset="UTF-8">
+  <title>うなりシミュレーター</title>
   <style>
-    :root{
-      --bg:#0f1724; --card:#0b1220; --accent:#ffb86b; --muted:#9aa6b2; --glass:rgba(255,255,255,0.04);
-      --radius:12px; --gap:12px;
-    }
-    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN",Meiryo,Helvetica,Arial}
-    body{margin:0;background:linear-gradient(180deg,#071028 0%, #091827 60%, #071026 100%);color:#e6eef6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .app{width:980px;max-width:98vw;background:linear-gradient(180deg,rgba(255,255,255,0.03),transparent);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
-    .header{display:flex;gap:12px;align-items:center;justify-content:space-between}
-    h1{font-size:18px;margin:0}
-    .controls{display:flex;gap:12px;align-items:center}
-    .card{background:var(--card);padding:12px;border-radius:10px;min-width:220px}
-    .control-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-    label{color:var(--muted);font-size:13px;min-width:78px}
-    input[type=range]{width:100%}
-    input[type=number]{width:80px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
-    button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:#071027;font-weight:600;cursor:pointer}
-    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .viz-wrap{display:flex;gap:12px;margin-top:12px}
-    canvas{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:8px;width:100%;height:240px}
-    .right{flex:1}
-    .left{width:360px}
-    .meta{font-size:13px;color:var(--muted);margin-top:8px}
-    .footer{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px}
-    .small{font-size:12px;color:var(--muted)}
-    .row{display:flex;gap:8px;align-items:center}
+    body { text-align: center; font-family: sans-serif; }
+    canvas { border: 1px solid black; display: block; margin: 0 auto; }
+    .controls { margin: 10px; }
   </style>
 </head>
 <body>
-  <div class="app" role="application">
-    <div class="header">
-      <h1>うなり（ビート）シミュレーター</h1>
-      <div class="controls">
-        <button id="playBtn">再生</button>
-        <button class="secondary" id="stopBtn">停止</button>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:12px;align-items:flex-start;margin-top:12px;">
-      <div class="left card">
-        <div class="control-row">
-          <label>周波数 f₁</label>
-          <input id="f1" type="range" min="50" max="2000" value="440">
-          <input id="f1n" type="number" min="20" max="20000" value="440">
-        </div>
-        <div class="control-row">
-          <label>周波数 f₂</label>
-          <input id="f2" type="range" min="50" max="2000" value="444">
-          <input id="f2n" type="number" min="20" max="20000" value="444">
-        </div>
-        <div class="control-row">
-          <label>音量</label>
-          <input id="gain" type="range" min="0" max="1" step="0.01" value="0.2">
-          <input id="gainn" type="number" min="0" max="1" step="0.01" value="0.2">
-        </div>
-        <div class="control-row">
-          <label>ビート周波数</label>
-          <div style="flex:1" id="beatInfo">|f₂ − f₁| = <span id="beatVal">4</span> Hz</div>
-        </div>
-
-        <div class="meta">左のスライダーか数値を変えてください。<br>再生中に値を変えるとリアルタイムで音が更新されます。</div>
-      </div>
-
-      <div class="right">
-        <div class="viz-wrap">
-          <canvas id="waveCanvas"></canvas>
-        </div>
-        <div class="footer">
-          <div class="small">波形：合成波（青）/ 個々の波（点線）</div>
-        </div>
-      </div>
-    </div>
+  <h1>うなりシミュレーター</h1>
+  <div class="controls">
+    f1: <input type="range" id="f1" min="100" max="600" value="440">
+    <span id="f1Val">440</span> Hz
+    <br>
+    f2: <input type="range" id="f2" min="100" max="600" value="442">
+    <span id="f2Val">442</span> Hz
   </div>
+  <canvas id="canvas" width="800" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
-<script>
-// ---- 初期設定 ----
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-let ctx = null;
-let osc1 = null, osc2 = null, gainNode = null, merger = null;
-let analyser = null;
-let playing = false;
+    const f1Slider = document.getElementById("f1");
+    const f2Slider = document.getElementById("f2");
+    const f1Val = document.getElementById("f1Val");
+    const f2Val = document.getElementById("f2Val");
 
-// UI
-const playBtn = document.getElementById('playBtn');
-const stopBtn = document.getElementById('stopBtn');
-const f1 = document.getElementById('f1');
-const f2 = document.getElementById('f2');
-const f1n = document.getElementById('f1n');
-const f2n = document.getElementById('f2n');
-const gainSlider = document.getElementById('gain');
-const gainNum = document.getElementById('gainn');
-const beatVal = document.getElementById('beatVal');
+    let f1 = 440, f2 = 442;
+    const sampleRate = 8000;
+    const duration = 0.01;
 
-// Canvas
-const canvas = document.getElementById('waveCanvas');
-const dpr = window.devicePixelRatio || 1;
-canvas.width = canvas.clientWidth * dpr;
-canvas.height = canvas.clientHeight * dpr;
-const g = canvas.getContext('2d');
-g.scale(dpr, dpr);
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
 
-function ensureAudio(){
-  if(!ctx){
-    ctx = new AudioContext();
-  }
-}
+      let N = Math.floor(sampleRate * duration);
+      let t, y1, y2, y;
+      ctx.strokeStyle = "blue";
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        t = i / sampleRate;
+        y1 = Math.sin(2 * Math.PI * f1 * t);
+        let x = (i / N) * canvas.width;
+        let yCanvas = canvas.height/2 - y1 * 50;
+        if (i === 0) ctx.moveTo(x, yCanvas);
+        else ctx.lineTo(x, yCanvas);
+      }
+      ctx.stroke();
 
-function createNodes(){
-  ensureAudio();
-  // Oscillators
-  osc1 = ctx.createOscillator();
-  osc2 = ctx.createOscillator();
-  osc1.type = 'sine';
-  osc2.type = 'sine';
-  // Gain
-  gainNode = ctx.createGain();
-  gainNode.gain.value = parseFloat(gainSlider.value);
-  // Merger to combine
-  merger = ctx.createGain();
-  // analyser for visualization
-  analyser = ctx.createAnalyser();
-  analyser.fftSize = 2048;
+      ctx.strokeStyle = "green";
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        t = i / sampleRate;
+        y2 = Math.sin(2 * Math.PI * f2 * t);
+        let x = (i / N) * canvas.width;
+        let yCanvas = canvas.height/2 - y2 * 50;
+        if (i === 0) ctx.moveTo(x, yCanvas);
+        else ctx.lineTo(x, yCanvas);
+      }
+      ctx.stroke();
 
-  // connect chain
-  osc1.connect(merger);
-  osc2.connect(merger);
-  merger.connect(gainNode);
-  gainNode.connect(analyser);
-  analyser.connect(ctx.destination);
-}
+      ctx.strokeStyle = "red";
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        t = i / sampleRate;
+        y1 = Math.sin(2 * Math.PI * f1 * t);
+        y2 = Math.sin(2 * Math.PI * f2 * t);
+        y = y1 + y2;
+        let x = (i / N) * canvas.width;
+        let yCanvas = canvas.height/2 - y * 50;
+        if (i === 0) ctx.moveTo(x, yCanvas);
+        else ctx.lineTo(x, yCanvas);
+      }
+      ctx.stroke();
+    }
 
-function startAudio(){
-  if(playing) return;
-  createNodes();
-  // set frequencies
-  osc1.frequency.value = parseFloat(f1.value);
-  osc2.frequency.value = parseFloat(f2.value);
-  // start
-  const now = ctx.currentTime;
-  osc1.start(now);
-  osc2.start(now);
-  playing = true;
-  animate();
-}
+    function update() {
+      f1 = parseFloat(f1Slider.value);
+      f2 = parseFloat(f2Slider.value);
+      f1Val.textContent = f1;
+      f2Val.textContent = f2;
+      draw();
+    }
 
-function stopAudio(){
-  if(!playing) return;
-  try{
-    osc1.stop();
-    osc2.stop();
-  }catch(e){}
-  // disconnect
-  osc1.disconnect(); osc2.disconnect(); merger.disconnect(); gainNode.disconnect(); analyser.disconnect();
-  osc1 = osc2 = gainNode = merger = analyser = null;
-  playing = false;
-}
+    f1Slider.addEventListener("input", update);
+    f2Slider.addEventListener("input", update);
 
-// UI bindings
-function syncRangeToNum(range, num){
-  num.value = range.value;
-}
-function syncNumToRange(num, range){
-  range.value = num.value;
-}
-
-[f1, f2].forEach(el=>{
-  el.addEventListener('input', ()=>{
-    const id = el.id;
-    document.getElementById(id+'n').value = el.value;
-    updateFreqs();
-  });
-});
-[f1n, f2n].forEach(el=>{
-  el.addEventListener('input', ()=>{
-    const id = el.id.slice(0,-1);
-    document.getElementById(id).value = el.value;
-    updateFreqs();
-  });
-});
-
-gainSlider.addEventListener('input', ()=>{gainNum.value = gainSlider.value; updateGain();});
-gainNum.addEventListener('input', ()=>{gainSlider.value = gainNum.value; updateGain();});
-
-playBtn.addEventListener('click', ()=>{ if(!playing){ startAudio(); playBtn.textContent='再生中'; playBtn.disabled=true; } });
-stopBtn.addEventListener('click', ()=>{ stopAudio(); playBtn.textContent='再生'; playBtn.disabled=false; });
-
-function updateFreqs(){
-  const v1 = parseFloat(f1.value);
-  const v2 = parseFloat(f2.value);
-  beatVal.textContent = Math.abs(v2 - v1).toFixed(2);
-  if(osc1) osc1.frequency.setValueAtTime(v1, ctx.currentTime);
-  if(osc2) osc2.frequency.setValueAtTime(v2, ctx.currentTime);
-}
-function updateGain(){
-  if(gainNode) gainNode.gain.setValueAtTime(parseFloat(gainSlider.value), ctx.currentTime);
-}
-
-// Visualization
-function drawStaticBackground(){
-  const w = canvas.clientWidth; const h = canvas.clientHeight;
-  g.clearRect(0,0,w,h);
-  // grid
-  g.fillStyle = '#071427';
-  g.fillRect(0,0,w,h);
-}
-
-function animate(){
-  if(!playing) return;
-  requestAnimationFrame(animate);
-  drawStaticBackground();
-  // get waveform
-  const bufferLength = analyser.fftSize;
-  const data = new Float32Array(bufferLength);
-  analyser.getFloatTimeDomainData(data);
-
-  const w = canvas.clientWidth; const h = canvas.clientHeight;
-  // draw waveform
-  g.lineWidth = 2;
-  // composite waveform
-  g.beginPath();
-  g.strokeStyle = '#6ee7b7';
-  const step = Math.ceil(bufferLength / w);
-  for(let i=0;i<w;i++){
-    const idx = Math.min(i*step, bufferLength-1);
-    const v = data[idx];
-    const y = h/2 - v * h/2;
-    if(i===0) g.moveTo(i,y); else g.lineTo(i,y);
-  }
-  g.stroke();
-
-  // overlay absolute envelope to show beats
-  g.beginPath();
-  g.strokeStyle = 'rgba(255,150,80,0.9)';
-  for(let i=0;i<w;i++){
-    const idx = Math.min(i*step, bufferLength-1);
-    const v = Math.abs(data[idx]);
-    const y = h - v * h;
-    if(i===0) g.moveTo(i,y); else g.lineTo(i,y);
-  }
-  g.stroke();
-
-  // draw center line
-  g.beginPath(); g.strokeStyle='rgba(255,255,255,0.06)'; g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke();
-}
-
-// resize handling
-window.addEventListener('resize', ()=>{
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
-  g.scale(dpr, dpr);
-});
-
-// init labels
-beatVal.textContent = Math.abs(parseFloat(f2.value)-parseFloat(f1.value)).toFixed(2);
-
-</script>
+    update();
+  </script>
 </body>
 </html>
+
