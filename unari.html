@@ -34,6 +34,7 @@
     let f1 = 440, f2 = 442;
     const sampleRate = 8000;
     const duration = 0.01;
+    let t0 = 0; // アニメーション用時間オフセット
 
     // Web Audio API
     let audioCtx = null;
@@ -44,11 +45,12 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       let N = Math.floor(sampleRate * duration);
 
-      // f1 の波（青）
+      // f1 の波（青、点線）
       ctx.strokeStyle = "blue";
+      ctx.setLineDash([5, 5]);
       ctx.beginPath();
       for (let i = 0; i < N; i++) {
-        let t = i / sampleRate;
+        let t = i / sampleRate + t0;
         let y = Math.sin(2 * Math.PI * f1 * t);
         let x = (i / N) * canvas.width;
         let yCanvas = canvas.height/2 - y * 60;
@@ -57,11 +59,12 @@
       }
       ctx.stroke();
 
-      // f2 の波（緑）
+      // f2 の波（緑、点線）
       ctx.strokeStyle = "green";
+      ctx.setLineDash([5, 5]);
       ctx.beginPath();
       for (let i = 0; i < N; i++) {
-        let t = i / sampleRate;
+        let t = i / sampleRate + t0;
         let y = Math.sin(2 * Math.PI * f2 * t);
         let x = (i / N) * canvas.width;
         let yCanvas = canvas.height/2 - y * 60;
@@ -70,11 +73,12 @@
       }
       ctx.stroke();
 
-      // 合成波（赤）
+      // 合成波（赤、実線）
       ctx.strokeStyle = "red";
+      ctx.setLineDash([]);
       ctx.beginPath();
       for (let i = 0; i < N; i++) {
-        let t = i / sampleRate;
+        let t = i / sampleRate + t0;
         let y = Math.sin(2 * Math.PI * f1 * t) + Math.sin(2 * Math.PI * f2 * t);
         let x = (i / N) * canvas.width;
         let yCanvas = canvas.height/2 - y * 30; // 振幅調整
@@ -84,12 +88,17 @@
       ctx.stroke();
     }
 
+    function animate() {
+      draw();
+      t0 += 0.002; // 時間の進み方（数値を変えると速さが変わる）
+      requestAnimationFrame(animate);
+    }
+
     function update() {
       f1 = parseFloat(f1Slider.value);
       f2 = parseFloat(f2Slider.value);
       f1Val.textContent = f1;
       f2Val.textContent = f2;
-      draw();
 
       if (isPlaying && osc1 && osc2) {
         osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
@@ -113,7 +122,7 @@
         osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
         osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
 
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // 音量
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
 
         osc1.connect(gainNode);
         osc2.connect(gainNode);
@@ -133,8 +142,11 @@
       }
     });
 
+    // 初期描画とアニメーション開始
     update();
+    animate();
   </script>
 </body>
 </html>
+
 
