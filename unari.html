@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <title>うなりシミュレーター</title>
   <style>
-    body { text-align: center; font-family: sans-serif; }
-    canvas { border: 1px solid black; display: block; margin: 0 auto; }
+    body { text-align: center; font-family: sans-serif; background: white; }
+    canvas { border: 1px solid black; display: block; margin: 0 auto; background: white; }
     .controls { margin: 10px; }
+    button { margin-top: 10px; padding: 5px 15px; }
   </style>
 </head>
 <body>
@@ -17,6 +18,8 @@
     <br>
     f2: <input type="range" id="f2" min="100" max="600" value="442">
     <span id="f2Val">442</span> Hz
+    <br>
+    <button id="playBtn">▶ 再生 / 停止</button>
   </div>
   <canvas id="canvas" width="800" height="400"></canvas>
   <script>
@@ -32,45 +35,49 @@
     const sampleRate = 8000;
     const duration = 0.01;
 
+    // Web Audio API
+    let audioCtx = null;
+    let osc1 = null, osc2 = null, gainNode = null;
+    let isPlaying = false;
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-
       let N = Math.floor(sampleRate * duration);
-      let t, y1, y2, y;
+
+      // f1 の波（青）
       ctx.strokeStyle = "blue";
       ctx.beginPath();
       for (let i = 0; i < N; i++) {
-        t = i / sampleRate;
-        y1 = Math.sin(2 * Math.PI * f1 * t);
+        let t = i / sampleRate;
+        let y = Math.sin(2 * Math.PI * f1 * t);
         let x = (i / N) * canvas.width;
-        let yCanvas = canvas.height/2 - y1 * 50;
+        let yCanvas = canvas.height/2 - y * 60;
         if (i === 0) ctx.moveTo(x, yCanvas);
         else ctx.lineTo(x, yCanvas);
       }
       ctx.stroke();
 
+      // f2 の波（緑）
       ctx.strokeStyle = "green";
       ctx.beginPath();
       for (let i = 0; i < N; i++) {
-        t = i / sampleRate;
-        y2 = Math.sin(2 * Math.PI * f2 * t);
+        let t = i / sampleRate;
+        let y = Math.sin(2 * Math.PI * f2 * t);
         let x = (i / N) * canvas.width;
-        let yCanvas = canvas.height/2 - y2 * 50;
+        let yCanvas = canvas.height/2 - y * 60;
         if (i === 0) ctx.moveTo(x, yCanvas);
         else ctx.lineTo(x, yCanvas);
       }
       ctx.stroke();
 
+      // 合成波（赤）
       ctx.strokeStyle = "red";
       ctx.beginPath();
       for (let i = 0; i < N; i++) {
-        t = i / sampleRate;
-        y1 = Math.sin(2 * Math.PI * f1 * t);
-        y2 = Math.sin(2 * Math.PI * f2 * t);
-        y = y1 + y2;
+        let t = i / sampleRate;
+        let y = Math.sin(2 * Math.PI * f1 * t) + Math.sin(2 * Math.PI * f2 * t);
         let x = (i / N) * canvas.width;
-        let yCanvas = canvas.height/2 - y * 50;
+        let yCanvas = canvas.height/2 - y * 30; // 振幅調整
         if (i === 0) ctx.moveTo(x, yCanvas);
         else ctx.lineTo(x, yCanvas);
       }
@@ -83,10 +90,48 @@
       f1Val.textContent = f1;
       f2Val.textContent = f2;
       draw();
+
+      if (isPlaying && osc1 && osc2) {
+        osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
+        osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
+      }
     }
 
     f1Slider.addEventListener("input", update);
     f2Slider.addEventListener("input", update);
+
+    // 音の再生・停止
+    document.getElementById("playBtn").addEventListener("click", () => {
+      if (!isPlaying) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        osc1 = audioCtx.createOscillator();
+        osc2 = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+
+        osc1.type = "sine";
+        osc2.type = "sine";
+        osc1.frequency.setValueAtTime(f1, audioCtx.currentTime);
+        osc2.frequency.setValueAtTime(f2, audioCtx.currentTime);
+
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // 音量
+
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc1.start();
+        osc2.start();
+
+        isPlaying = true;
+        document.getElementById("playBtn").textContent = "■ 停止";
+      } else {
+        osc1.stop();
+        osc2.stop();
+        audioCtx.close();
+        isPlaying = false;
+        document.getElementById("playBtn").textContent = "▶ 再生";
+      }
+    });
 
     update();
   </script>
