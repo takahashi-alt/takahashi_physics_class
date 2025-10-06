@@ -48,7 +48,6 @@
 
     let f1 = 440;
     let f2 = 442;
-    let t = 0;
 
     // スライダー設定
     const freq1Slider = document.getElementById("freq1");
@@ -69,56 +68,8 @@
     });
 
     function draw() {
+      // キャンバスを常に真っ白にリセット
       ctx.clearRect(0, 0, width, height);
-
-      const duration = 0.1; // 横軸に表示する時間 [秒]
-      const samples = width;
-      const dt = duration / samples;
-
-      ctx.lineWidth = 2;
-
-      // --- 合成波 ---
-      ctx.beginPath();
-      for (let i = 0; i < samples; i++) {
-        const time = i * dt + t;
-        const y = height/2 + 80 * (
-          Math.sin(2*Math.PI*f1*time) + Math.sin(2*Math.PI*f2*time)
-        ) / 2;
-        if (i === 0) ctx.moveTo(i, y);
-        else ctx.lineTo(i, y);
-      }
-      ctx.strokeStyle = "black";
-      ctx.stroke();
-
-      // --- 包絡線の計算 ---
-      const f_beat = Math.abs(f1 - f2) / 2;  // うなり周波数
-
-      // 上側
-      ctx.beginPath();
-      for (let i = 0; i < samples; i++) {
-        const time = i * dt + t;
-        const envelope = 80 * Math.cos(2 * Math.PI * f_beat * time);
-        const y = height/2 + envelope;
-        if (i === 0) ctx.moveTo(i, y);
-        else ctx.lineTo(i, y);
-      }
-      ctx.strokeStyle = "orange";
-      ctx.stroke();
-
-      // 下側
-      ctx.beginPath();
-      for (let i = 0; i < samples; i++) {
-        const time = i * dt + t;
-        const envelope = -80 * Math.cos(2 * Math.PI * f_beat * time);
-        const y = height/2 + envelope;
-        if (i === 0) ctx.moveTo(i, y);
-        else ctx.lineTo(i, y);
-      }
-      ctx.strokeStyle = "orange";
-      ctx.stroke();
-
-      // 時間進行
-      t += dt * 20;
 
       requestAnimationFrame(draw);
     }
@@ -165,7 +116,7 @@
       }
     });
 
-    // 描画開始
+    // 描画ループ開始
     draw();
   </script>
   <br>
