@@ -35,7 +35,7 @@
     </label>
     <label>
       f2: <input type="range" id="freq2" min="200" max="600" value="442"> 
-      <span id="f2val">444</span> Hz
+      <span id="f2val">442</span> Hz
     </label>
     <button id="toggleSound">再生</button>
   </div>
@@ -49,7 +49,6 @@
     let f1 = 440;
     let f2 = 442;
     let t = 0;
-    const speed = 0.03;
 
     // スライダー設定
     const freq1Slider = document.getElementById("freq1");
@@ -69,51 +68,60 @@
       if (osc2) osc2.frequency.value = f2;
     });
 
-   function draw() {
-  ctx.clearRect(0, 0, width, height);
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
 
-  const duration = 0.02; // 横軸に表示する時間 [秒]
-  const samples = width; // ピクセルごとのサンプル
-  const dt = duration / samples;
+      const duration = 0.1; // 横軸に表示する時間 [秒]
+      const samples = width;
+      const dt = duration / samples;
 
-  ctx.lineWidth = 2;
+      ctx.lineWidth = 2;
 
-  // 個別波
-  function drawWave(freq, color, dash) {
-    ctx.beginPath();
-    ctx.setLineDash(dash ? [5, 5] : []);
-    for (let i = 0; i < samples; i++) {
-      const time = i * dt + t; // 時間軸
-      const y = height/2 + 80 * Math.sin(2 * Math.PI * freq * time);
-      if (i === 0) ctx.moveTo(i, y);
-      else ctx.lineTo(i, y);
+      // --- 合成波 ---
+      ctx.beginPath();
+      for (let i = 0; i < samples; i++) {
+        const time = i * dt + t;
+        const y = height/2 + 80 * (
+          Math.sin(2*Math.PI*f1*time) + Math.sin(2*Math.PI*f2*time)
+        ) / 2;
+        if (i === 0) ctx.moveTo(i, y);
+        else ctx.lineTo(i, y);
+      }
+      ctx.strokeStyle = "black";
+      ctx.stroke();
+
+      // --- 包絡線の計算 ---
+      const f_beat = Math.abs(f1 - f2) / 2;  // うなり周波数
+
+      // 上側
+      ctx.beginPath();
+      for (let i = 0; i < samples; i++) {
+        const time = i * dt + t;
+        const envelope = 80 * Math.cos(2 * Math.PI * f_beat * time);
+        const y = height/2 + envelope;
+        if (i === 0) ctx.moveTo(i, y);
+        else ctx.lineTo(i, y);
+      }
+      ctx.strokeStyle = "orange";
+      ctx.stroke();
+
+      // 下側
+      ctx.beginPath();
+      for (let i = 0; i < samples; i++) {
+        const time = i * dt + t;
+        const envelope = -80 * Math.cos(2 * Math.PI * f_beat * time);
+        const y = height/2 + envelope;
+        if (i === 0) ctx.moveTo(i, y);
+        else ctx.lineTo(i, y);
+      }
+      ctx.strokeStyle = "orange";
+      ctx.stroke();
+
+      // 時間進行
+      t += dt * 20;
+
+      requestAnimationFrame(draw);
     }
-    ctx.strokeStyle = color;
-    ctx.stroke();
-  }
-
-  drawWave(f1, "blue", true);
-  drawWave(f2, "red", true);
-
-  // 合成波
-  ctx.beginPath();
-  ctx.setLineDash([]);
-  for (let i = 0; i < samples; i++) {
-    const time = i * dt + t;
-    const y = height/2 + 80 * (
-      Math.sin(2*Math.PI*f1*time) + Math.sin(2*Math.PI*f2*time)
-    ) / 2;
-    if (i === 0) ctx.moveTo(i, y);
-    else ctx.lineTo(i, y);
-  }
-  ctx.strokeStyle = "black";
-  ctx.stroke();
-
-  // 時間進行
-  t += dt * 30; // スクロール速度調整
-
-  requestAnimationFrame(draw);
-}
 
     // ==== 音の再生 ====
     let audioCtx = null;
@@ -156,11 +164,10 @@
         isPlaying = false;
       }
     });
+
+    // 描画開始
+    draw();
   </script>
-</body>
-</html>
-
-
   <br>
   <script src="tatenami.js"></script>
   <a href="index.html">ホームに戻る</a>
