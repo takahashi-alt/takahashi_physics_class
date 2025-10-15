@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>偏光の基本シミュレーター</title>
+  <style>
+    body{background:#f8fafc;color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Hiragino Kaku Gothic ProN',Meiryo;margin:0;padding:20px;text-align:center}
+    h1{margin-bottom:10px}
+    canvas{background:#fff;border:1px solid #ddd;border-radius:8px;margin-top:10px}
+    .control{margin-top:14px}
+    input[type=range]{width:300px}
+    .small{font-size:14px;color:#555}
+  </style>
+</head>
+<body>
+  <h1>偏光板による光の方向の制限</h1>
+  <div class="small">左側の光は様々な方向に振動しています（無偏光）。偏光板を通すと、その角度方向の光だけが通ります。</div>
+  <canvas id="canvas" width="700" height="350"></canvas>
+
+  <div class="control">
+    <label>偏光板の角度: <span id="angleLabel">0°</span></label><br>
+    <input type="range" id="angle" min="0" max="180" value="0">
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const angleSlider = document.getElementById('angle');
+    const angleLabel = document.getElementById('angleLabel');
+
+    function deg(a){return a*Math.PI/180;}
+
+    function draw(){
+      const polAngle = parseFloat(angleSlider.value);
+      angleLabel.textContent = polAngle + '°';
+
+      ctx.clearRect(0,0,W,H);
+
+      // 区画線
+      const midX = W/2;
+      ctx.strokeStyle = '#999';
+      ctx.beginPath();
+      ctx.moveTo(midX,0);
+      ctx.lineTo(midX,H);
+      ctx.stroke();
+
+      ctx.font = '16px sans-serif';
+      ctx.fillStyle = '#333';
+      ctx.fillText('無偏光（入射光）', 60, 30);
+      ctx.fillText('偏光板通過後', midX + 60, 30);
+
+      // 光線を描画
+      const n = 100;
+      for(let i=0;i<n;i++){
+        const y = 60 + i*2.5;
+        const angle = Math.random()*180; // 無偏光
+
+        // 左：無偏光の電場ベクトル
+        drawVector(midX/2, y, angle, 30, 'rgba(0,0,0,0.5)');
+
+        // 偏光板を通した後（角度polAngle方向の成分のみ）
+        const amp = Math.abs(Math.cos(deg(angle-polAngle))); // 振幅比
+        const len = 30*amp;
+        drawVector(midX+midX/2, y, polAngle, len, 'rgba(0,0,255,0.7)');
+      }
+
+      // 偏光板を描画
+      ctx.save();
+      ctx.translate(midX, H/2);
+      ctx.rotate(-deg(polAngle));
+      ctx.fillStyle = 'rgba(0,0,255,0.15)';
+      ctx.fillRect(-5, -H/2, 10, H);
+      ctx.restore();
+
+      ctx.fillStyle = '#444';
+      ctx.fillText('偏光板', midX-25, H/2 - 70);
+    }
+
+    function drawVector(x, y, angle, len, color){
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-deg(angle));
+      ctx.beginPath();
+      ctx.moveTo(-len/2, 0);
+      ctx.lineTo(len/2, 0);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    angleSlider.addEventListener('input', draw);
+    draw();
+  </script>
+</body>
+</html>
