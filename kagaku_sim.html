@@ -1,1 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>化学反応式</title>
+  <style>
+    body { font-family: "Noto Sans JP", monospace; margin: 40px; color: #111; background: #fff; line-height: 1.6; }
+    pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    code { font-family: monospace; }
+    h1 { font-size: 24px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h1>正弦波の描画と凸レンズのPythonコード</h1>
+  <pre><code>
+  #ライブラリのインポート
+import re
+import numpy as np
+import sympy as sp
+
+def parse_formula(formula):
+    """
+　　化学式（例："H2O"）を解析し、
+　　各元素とその個数を辞書として返す関数。
+　　例: "H2O" → {"H": 2, "O": 1}
+　　"""
+    pattern = r'([A-Z][a-z]*)(\d*)'
+    # re.findall()でマッチした全てのペアを取得し、数値が省略されていれば1とする
+    return {el:int(num or 1) for el,num in re.findall(pattern, formula)}
+
+def balance_equation(equation):
+    """
+    入力された化学反応式の文字列（例: "H2 + O2 -> H2O"）を
+    係数でバランスを取った形に整形して返す関数。
+    """
+
+    left_side, right_side = re.split(r'->', equation)
+    # 反応式を左右に分ける（→ で区切る）
+    left = [s.strip() for s in left_side.split('+')]
+    right = [s.strip() for s in right_side.split('+')]
+    species = left + right
+
+    # 元素の一覧を作る
+    elements = sorted({el for mol in species for el in parse_formula(mol)})
+
+    # NumPyで係数行列を構築
+    A = []
+    for el in elements:
+        row = []
+        for mol in left:
+            row.append(parse_formula(mol).get(el, 0))
+        for mol in right:
+            row.append(-parse_formula(mol).get(el, 0))
+        A.append(row)
+    A = np.array(A, dtype=int)
+
+    # Sympyで整数比を厳密に求める
+    A_sp = sp.Matrix(A)
+    null_space = A_sp.nullspace()
+    if not null_space:
+        return "解なし"
+    coeffs = null_space[0]
+    lcm = sp.lcm([term.q for term in coeffs])  # 分母の最小公倍数
+    coeffs = (coeffs * lcm).applyfunc(sp.simplify)
+    coeffs = [int(c) for c in coeffs]
+
+    # 整形（係数と化学式の間にスペースを追加）
+    result = []
+    for i, mol in enumerate(species):
+        c = abs(coeffs[i])
+        if c == 1:
+            result.append(f"{mol}")
+        else:
+            result.append(f"{c} {mol}")
+
+    return " + ".join(result[:len(left)]) + " → " + " + ".join(result[len(left):])
+  
+
+
+</code></pre>
+</body>
+</html>
 
