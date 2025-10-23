@@ -1,1 +1,128 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>正弦波と凸レンズのPythonコード</title>
+  <style>
+    body { font-family: "Noto Sans JP", monospace; margin: 40px; color: #111; background: #fff; line-height: 1.6; }
+    pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    code { font-family: monospace; }
+    h1 { font-size: 24px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h1>正弦波の描画と凸レンズのPythonコード</h1>
+  <pre><code>
+#正弦波の描画
+#ライブラリをインポート
+import numpy as np
+import matplotlib.pyplot as plt
+
+# パラメータ設定
+A = 1.0          # 振幅
+lam = 4.0        # 波長
+f = 2.0          # 振動数 [Hz]
+phi = 0.0*np.pi        # 初期位相
+v = lam * f      # 速さ [m/s]
+T=1/f            # 周期 [s]
+
+# 空間と時間
+x = np.linspace(0, 4*lam, 400)
+t = 0.0*T  # 任意の時刻
+
+# 正弦波
+y = A * np.sin(2*np.pi*(t/T - x/lam )+ phi)
+
+# 描画
+plt.plot(x, y)
+plt.title("sinwave y(x, t) = A sin(2π(t/T - x/λ )+ φ)")
+plt.xlabel(" x [m]")
+plt.ylabel(" y [m]")
+plt.grid(True)
+plt.show()
+
+<br>
+<br>
+#凸レンズの像
+import numpy as np
+import matplotlib.pyplot as plt
+
+# === パラメータ設定 ===
+f = 1.0            # 焦点距離 [m]
+lens_x = 0.0       # レンズ位置
+object_x = -abs(4.0)    # 物体位置（←虚像を見たいときは焦点より内側、例えば -1）
+object_height = 1.0  # 物体の高さ
+
+# === レンズ公式から像の位置を計算 ===
+# 1/f = 1/a + 1/v
+a = abs(object_x - lens_x)
+if a == f:
+    b = np.inf  # 焦点位置にある場合（無限遠）
+else:
+    b = 1 / (1/f - 1/a)
+
+# 像の位置（符号処理：虚像なら左側にできるように）
+if a < f:
+    b = -abs(b)  # 虚像（レンズと同じ側）
+image_x = lens_x + b
+
+# === 像の高さ ===
+magnification = -b / a
+image_height = magnification * object_height
+
+# === 描画準備 ===
+plt.figure(figsize=(8, 4))
+plt.axvline(lens_x, color='blue', linestyle='--', label='Lens')
+plt.axvline(lens_x + f, color='gray', linestyle=':', label='Focus(right)')
+plt.axvline(lens_x - f, color='gray', linestyle=':', label='Focus(left)')
+plt.axhline(0, color='black', linewidth=1)
+
+# === 物体と像 ===
+plt.plot([object_x, object_x], [0, object_height], color='green', linewidth=3, label='Object')
+plt.plot([image_x, image_x], [0, image_height], color='red', linewidth=3, label='Image')
+
+# === 主光線（3本） ===
+
+# 光軸に平行→レンズを通過後に焦点を通る（または虚像側に延長）
+if a > f:
+    # 実像
+    plt.plot([object_x, lens_x], [object_height, object_height], color='orange')
+    plt.plot([lens_x, image_x], [object_height, image_height], color='orange')
+else:
+    # 虚像（光はレンズで広がるように進む
+    plt.plot([object_x, lens_x], [object_height, object_height], color='orange')
+    # 実際の光の進む線（右へ広がる）
+    plt.plot([lens_x, lens_x + 3], [object_height, object_height - (3/f)*object_height], color='orange')
+    # 虚像を示す延長線（点線）
+    plt.plot([lens_x, image_x], [object_height, image_height], color='orange', linestyle='--')
+
+# レンズ中心を通る光（屈折せず直進）
+plt.plot([object_x, image_x], [object_height, image_height], color='orange', label='Ray')
+
+# 焦点を通る光（または焦点に向かう光）
+if a > f:
+    # 実像
+    plt.plot([object_x, lens_x], [object_height, 0], color='orange')
+    plt.plot([lens_x, image_x], [0, image_height], color='orange')
+else:
+    #  虚像（焦点に向かって入射 → レンズで平行に進む）
+    plt.plot([object_x, lens_x], [object_height, 0], color='orange')
+    plt.plot([lens_x, lens_x + 3], [0, 0], color='orange')
+
+# === グラフ装飾 ===
+plt.xlim(-10,10)
+plt.ylim(-object_height-1,object_height+1 )
+plt.minorticks_on()
+plt.grid(which='minor', linestyle=':', linewidth=0.5)
+
+plt.xlabel(" x [m]")
+plt.ylabel(" y [m]")
+plt.title("Convex lens")
+plt.legend()
+plt.grid(True)
+plt.show()
+</code></pre>
+</body>
+</html>
 
